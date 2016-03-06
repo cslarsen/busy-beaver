@@ -25,6 +25,9 @@ class TuringMachine:
         if self.tape is None:
             self.tape = collections.defaultdict(lambda: 0)
 
+        self.leftmost = 0
+        self.rightmost = 0
+
     def __repr__(self):
         return "Machine(state=%s, position=%s, tape=%s, transition=%s)" % (
                 self.state, self.position, self.tape, self.transition)
@@ -45,6 +48,11 @@ class TuringMachine:
         self.tape[self.position] = write
         self.position += move
         self.state = state
+
+        if self.position < self.leftmost:
+            self.leftmost = self.position
+        if self.position > self.rightmost:
+            self.rightmost = self.position
 
     def run(self, steps=None):
         """Runs the machine an unlimited or given number of steps.
@@ -69,6 +77,21 @@ class BusyBeaver(TuringMachine):
         """Returns number of ones in the tape."""
         return sum(self.tape.values())
 
+
+
+def print_result(machine):
+    for (state, symbol), instr in sorted(machine.transition.items()):
+        state = chr(ord("A") + state)
+        write, move, next = instr
+        if move == -1:
+            move = "L"
+        elif move == 1:
+            move = "R"
+        if next != "H":
+            next = chr(ord("A") + next)
+        print("%s %s: %s%s%s" % (state, symbol, write, move, next))
+    print("Result: <%d> %s <%s>" % (machine.leftmost, " ".join(map(str,
+        machine.tape.values())), machine.rightmost))
 
 def sigma(states):
     def instr():
@@ -109,6 +132,7 @@ def sigma(states):
             best = ones
             sys.stdout.write("\rChampion %d: %d\n" % (num, best))
             sys.stdout.flush()
+            print_result(machine)
     sys.stdout.write("\n")
     sys.stdout.flush()
 
