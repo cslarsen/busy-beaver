@@ -66,15 +66,17 @@ class TuringMachine:
         """
         self.state = state
         self.tape = Tape()
+        self.shifts = 0
         self.transition = transition
 
     def __repr__(self):
-        return "Machine(state=%s, position=%s, tape=%s, transition=%s)" % (
-                self.state, self.position, self.tape, self.transition)
+        return "Machine(state=%s, position=%s, tape=%s, transition=%s, shifts=%s)" % (
+                self.state, self.position, self.tape, self.transition,
+                self.shifts)
 
     def __str__(self):
-        return "Machine(state=%s, position=%s, symbol=%s)" % (self.state,
-                self.position, self.tape[self.position])
+        return "Machine(state=%s, position=%s, symbol=%s, shifts=%s)" % (self.state,
+                self.position, self.tape[self.position], self.shifts)
 
     def step(self):
         """Perform one computation step."""
@@ -87,6 +89,7 @@ class TuringMachine:
         # Perform these actions
         self.tape.write(symbol)
         self.tape.position += move
+        self.shifts += 1
         self.state = state
 
     def run(self, steps=None):
@@ -153,7 +156,8 @@ def sigma(states):
                         yield trans
 
     best = 0
-    for num, tran in enumerate(all_transitions()):
+    bb = None
+    for num, tran in enumerate(all_transitions(), 1):
         machine = BusyBeaver(transition=tran)
         try:
             #print(repr(machine))
@@ -165,15 +169,16 @@ def sigma(states):
             pass
         ones = machine.ones()
         if ones > best:
+            bb = machine
             best = ones
             sys.stdout.write("\rChampion %d: %d\n" % (num, best))
             sys.stdout.flush()
             print_result(machine)
-    sys.stdout.write("\n")
+    sys.stdout.write("\n%d-state machines enumerated: %d\n" % (states, num))
     sys.stdout.flush()
 
-    return best
+    return (bb.shifts, best)
 
 
 if __name__ == "__main__":
-    print("Sigma(2) = %d" % sigma(2))
+    print("Sigma(2) = %s" % str(sigma(2)))
