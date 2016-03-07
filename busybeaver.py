@@ -7,8 +7,55 @@ Run with Python3.
 import collections
 import sys
 
+class Tape:
+    def __init__(self, position=0, default=0):
+        self.tape = collections.defaultdict(lambda: default)
+        self._position = position
+        self.leftmost = 0
+        self.rightmost = 0
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, value):
+        self._position = value
+
+    def _update_extremes(self):
+        self.leftmost = min(self.leftmost, self._position)
+        self.rightmost = max(self.rightmost, self._position)
+
+    def read(self):
+        self._update_extremes()
+        return self.tape[self.position]
+
+    def write(self, value):
+        self._update_extremes()
+        self.tape[self.position] = value
+
+    def left(self):
+        self.position -= 1
+
+    def right(self):
+        self.position += 1
+
+    def values(self):
+        return self.tape.values()
+
+    def __str__(self):
+        s = ""
+        for index in range(self.leftmost, 1+self.rightmost):
+            s += "%s " % self.tape[index]
+        return s[:-1]
+
+    def __repr__(self):
+        return "<Tape: position=%d leftmost=%d rightmost=%d tape=%s>" % (self.position,
+                self.leftmost, self.rightmost, repr(dict(self.tape)))
+
+
 class TuringMachine:
-    def __init__(self, state=0, position=0, tape=None, transition=None):
+    def __init__(self, state=0, transition=None):
         """A Universal Turing machine.
 
         Args:
@@ -18,15 +65,8 @@ class TuringMachine:
                         next state) values.
         """
         self.state = state
-        self.position = position
-        self.tape = tape
+        self.tape = Tape()
         self.transition = transition
-
-        if self.tape is None:
-            self.tape = collections.defaultdict(lambda: 0)
-
-        self.leftmost = 0
-        self.rightmost = 0
 
     def __repr__(self):
         return "Machine(state=%s, position=%s, tape=%s, transition=%s)" % (
@@ -39,20 +79,15 @@ class TuringMachine:
     def step(self):
         """Perform one computation step."""
         # Read symbol at current tape position
-        symbol = self.tape[self.position]
+        symbol = self.tape.read()
 
         # Look up action based on the current state and the read symbol
-        write, move, state = self.transition[(self.state, symbol)]
+        symbol, move, state = self.transition[(self.state, symbol)]
 
         # Perform these actions
-        self.tape[self.position] = write
-        self.position += move
+        self.tape.write(symbol)
+        self.tape.position += move
         self.state = state
-
-        if self.position < self.leftmost:
-            self.leftmost = self.position
-        if self.position > self.rightmost:
-            self.rightmost = self.position
 
     def run(self, steps=None):
         """Runs the machine an unlimited or given number of steps.
@@ -60,6 +95,9 @@ class TuringMachine:
         Args:
             steps: If None, run indefinitely. If a positive number, run for
                    that number of steps.
+
+        Raises:
+            KeyError: The given state was not found. Effectively means to halt.
         """
         if steps is None:
             while True:
@@ -78,7 +116,6 @@ class BusyBeaver(TuringMachine):
         return sum(self.tape.values())
 
 
-
 def print_result(machine):
     for (state, symbol), instr in sorted(machine.transition.items()):
         state = chr(ord("A") + state)
@@ -90,8 +127,7 @@ def print_result(machine):
         if next != "H":
             next = chr(ord("A") + next)
         print("%s %s: %s%s%s" % (state, symbol, write, move, next))
-    print("Result: <%d> %s <%s>" % (machine.leftmost, " ".join(map(str,
-        machine.tape.values())), machine.rightmost))
+    print("Result: %s --- %s" % (machine.tape, repr(machine.tape)))
 
 def sigma(states):
     def instr():
@@ -116,7 +152,7 @@ def sigma(states):
                         }
                         yield trans
 
-    best = -1
+    best = 0
     for num, tran in enumerate(all_transitions()):
         machine = BusyBeaver(transition=tran)
         try:
