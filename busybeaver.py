@@ -167,7 +167,8 @@ def sigma(states):
     for num, tran in enumerate(all_transitions(), 1):
         candidate = BusyBeaver(transition=tran)
         try:
-            log("%d / %d\r" % (num, binary_machines(states)))
+            if num % 101 == 0:
+                log("%d / %d\r" % (num, binary_machines(states)))
             candidate.run(7) # cheating: stop after ops > S(n)
             continue # Did not halt
         except KeyError:
