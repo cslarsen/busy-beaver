@@ -5,10 +5,18 @@ Calculates the Busy Beaver Sigma function, naively.
 import collections
 import sys
 
+def binary_machines(n):
+    """The number of possible n-state, binary Turing machines."""
+    return (4*(n+1))**(2*n)
+
+def log(string, stream=sys.stdout):
+    stream.write(string)
+    stream.flush()
+
 class Tape(object):
     def __init__(self, position=0, default=0):
-        self.tape = collections.defaultdict(lambda: default)
-        self.position = position
+        self.data = collections.defaultdict(lambda: default)
+        self._position = position
         self.leftmost = 0
         self.rightmost = 0
         self.shifts = 0
@@ -19,6 +27,7 @@ class Tape(object):
 
     @position.setter
     def position(self, value):
+        self.shifts += abs(value)
         self._position = value
 
     def _update_extremes(self):
@@ -27,33 +36,33 @@ class Tape(object):
 
     def read(self):
         self._update_extremes()
-        return self.tape[self.position]
+        return self.data[self.position]
 
     def write(self, value):
         self._update_extremes()
-        self.tape[self.position] = value
+        self.data[self.position] = value
 
     def left(self):
-        self.position -= 1
         self.shifts += 1
+        self.position -= 1
 
     def right(self):
-        self.position += 1
         self.shifts += 1
+        self.position += 1
 
     def values(self):
-        return self.tape.values()
+        return self.data.values()
 
     def __str__(self):
         s = ""
         for index in range(self.leftmost, self.rightmost+1):
-            s += "%s " % self.tape[index]
+            s += "%s " % self.data[index]
         return s[:-1]
 
     def __repr__(self):
-        return "<Tape: position=%d, default=%s, leftmost=%d, rightmost=%d, shifts=%d tape=%s>" % (
-            self.position, self.tape.default_factory(), self.leftmost,
-            self.rightmost, self.shifts, dict(self.tape))
+        return "<Tape: position=%d, default=%s, leftmost=%d, rightmost=%d, shifts=%d data=%s>" % (
+            self.position, self.data.default_factory(), self.leftmost,
+            self.rightmost, self.shifts, dict(self.data))
 
 
 class TuringMachine(object):
@@ -119,14 +128,16 @@ class BusyBeaver(TuringMachine):
         return sum(self.tape.values())
 
 
-def print_result(machine):
+def show(machine):
+    log("%d ones, %d shifts: %s\n" % (machine.ones(), machine.tape.shifts,
+        machine.tape))
+
     for (state, symbol), instr in sorted(machine.transition.items()):
         state = chr(ord("A") + state)
         write, move, next = instr
         move = {-1: "L", 1: "R"}.get(move, move)
         next = chr(ord("A") + next) if next != "H" else next
-        print("%s %s: %s%s%s" % (state, symbol, write, move, next))
-    print("Result: %s --- %s" % (machine.tape, repr(machine.tape)))
+        log("  %s %s: %s%s%s\n" % (state, symbol, write, move, next))
 
 def sigma(states):
     def instr():
@@ -151,31 +162,24 @@ def sigma(states):
                         }
                         yield trans
 
-    best = 0
-    bb = None
+    champion = BusyBeaver({})
+
     for num, tran in enumerate(all_transitions(), 1):
-        machine = BusyBeaver(transition=tran)
+        candidate = BusyBeaver(transition=tran)
         try:
-            #print(repr(machine))
-            sys.stdout.write("\r%d" % num)
-            sys.stdout.flush()
-            machine.run(7) # cheating: the value of S(n)+1
+            log("%d / %d\r" % (num, binary_machines(states)))
+            candidate.run(7) # cheating: stop after ops > S(n)
             continue # Did not halt
         except KeyError:
+            # By definition, halts
             pass
-        ones = machine.ones()
-        if ones > best:
-            bb = machine
-            best = ones
-            sys.stdout.write("\rChampion %d: %d\n" % (num, best))
-            sys.stdout.flush()
-            print_result(machine)
-    sys.stdout.write("\n%d-state machines enumerated: %d (expected: %d)\n" %
-            (states, num, (4*(states+1))**(2*states)))
-    sys.stdout.flush()
+        if candidate.ones() > champion.ones():
+            champion = candidate
+            show(champion)
 
-    return (bb.tape.shifts, best)
+    log("\n%d-state machines enumerated: %d\n" % (states, num))
+    return champion.ones()
 
 
 if __name__ == "__main__":
-    print("Sigma(2) = %s" % str(sigma(2)))
+    log("Sigma(2) = %s\n" % str(sigma(2)))
