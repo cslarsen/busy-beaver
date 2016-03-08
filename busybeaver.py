@@ -1,18 +1,17 @@
 """
 Calculates the Busy Beaver Sigma function, naively.
-
-Run with Python3.
 """
 
 import collections
 import sys
 
-class Tape:
+class Tape(object):
     def __init__(self, position=0, default=0):
         self.tape = collections.defaultdict(lambda: default)
-        self._position = position
+        self.position = position
         self.leftmost = 0
         self.rightmost = 0
+        self.shifts = 0
 
     @property
     def position(self):
@@ -23,8 +22,8 @@ class Tape:
         self._position = value
 
     def _update_extremes(self):
-        self.leftmost = min(self.leftmost, self._position)
-        self.rightmost = max(self.rightmost, self._position)
+        self.leftmost = min(self.leftmost, self.position)
+        self.rightmost = max(self.rightmost, self.position)
 
     def read(self):
         self._update_extremes()
@@ -36,25 +35,28 @@ class Tape:
 
     def left(self):
         self.position -= 1
+        self.shifts += 1
 
     def right(self):
         self.position += 1
+        self.shifts += 1
 
     def values(self):
         return self.tape.values()
 
     def __str__(self):
         s = ""
-        for index in range(self.leftmost, 1+self.rightmost):
+        for index in range(self.leftmost, self.rightmost+1):
             s += "%s " % self.tape[index]
         return s[:-1]
 
     def __repr__(self):
-        return "<Tape: position=%d leftmost=%d rightmost=%d tape=%s>" % (self.position,
-                self.leftmost, self.rightmost, repr(dict(self.tape)))
+        return "<Tape: position=%d, default=%s, leftmost=%d, rightmost=%d, shifts=%d tape=%s>" % (
+            self.position, self.tape.default_factory(), self.leftmost,
+            self.rightmost, self.shifts, dict(self.tape))
 
 
-class TuringMachine:
+class TuringMachine(object):
     def __init__(self, state=0, transition=None):
         """A Universal Turing machine.
 
@@ -66,7 +68,6 @@ class TuringMachine:
         """
         self.state = state
         self.tape = Tape()
-        self.shifts = 0
         self.transition = transition
 
     def __repr__(self):
@@ -89,7 +90,6 @@ class TuringMachine:
         # Perform these actions
         self.tape.write(symbol)
         self.tape.position += move
-        self.shifts += 1
         self.state = state
 
     def run(self, steps=None):
@@ -112,7 +112,7 @@ class TuringMachine:
 
 class BusyBeaver(TuringMachine):
     def __init__(self, transition):
-        super().__init__(transition=transition)
+        super(BusyBeaver, self).__init__(transition=transition)
 
     def ones(self):
         """Returns number of ones in the tape."""
@@ -123,12 +123,8 @@ def print_result(machine):
     for (state, symbol), instr in sorted(machine.transition.items()):
         state = chr(ord("A") + state)
         write, move, next = instr
-        if move == -1:
-            move = "L"
-        elif move == 1:
-            move = "R"
-        if next != "H":
-            next = chr(ord("A") + next)
+        move = {-1: "L", 1: "R"}.get(move, move)
+        next = chr(ord("A") + next) if next != "H" else next
         print("%s %s: %s%s%s" % (state, symbol, write, move, next))
     print("Result: %s --- %s" % (machine.tape, repr(machine.tape)))
 
@@ -177,7 +173,7 @@ def sigma(states):
     sys.stdout.write("\n%d-state machines enumerated: %d\n" % (states, num))
     sys.stdout.flush()
 
-    return (bb.shifts, best)
+    return (bb.tape.shifts, best)
 
 
 if __name__ == "__main__":
