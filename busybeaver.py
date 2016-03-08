@@ -170,7 +170,8 @@ def sigma(states):
             sys.stdout.write("\rChampion %d: %d\n" % (num, best))
             sys.stdout.flush()
             print_result(machine)
-    sys.stdout.write("\n%d-state machines enumerated: %d\n" % (states, num))
+    sys.stdout.write("\n%d-state machines enumerated: %d (expected: %d)\n" %
+            (states, num, (4*(states+1))**(2*states)))
     sys.stdout.flush()
 
     return (bb.tape.shifts, best)
