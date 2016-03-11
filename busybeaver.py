@@ -3,6 +3,7 @@ Calculates the Busy Beaver Sigma function, naively.
 """
 
 import collections
+import itertools
 import sys
 
 def binary_machines(n):
@@ -129,7 +130,7 @@ class BusyBeaver(TuringMachine):
 
 
 def show(machine):
-    log("%d ones, %d shifts: %s\n" % (machine.ones(), machine.tape.shifts,
+    log("  %d ones, %d shifts: %s\n" % (machine.ones(), machine.tape.shifts,
         machine.tape))
 
     for (state, symbol), instr in sorted(machine.transition.items()):
@@ -137,7 +138,7 @@ def show(machine):
         write, move, next = instr
         move = {-1: "L", 1: "R"}.get(move, move)
         next = chr(ord("A") + next) if next != "H" else next
-        log("  %s %s: %s%s%s\n" % (state, symbol, write, move, next))
+        log("    %s %s: %s%s%s\n" % (state, symbol, write, move, next))
 
 def sigma(states):
     def instr():
@@ -149,38 +150,39 @@ def sigma(states):
 
     def all_transitions():
         """Generate all possible transition functions."""
-        # TODO: This one is hardwired for two-state busy beaver
-        for a in instr():
-            for b in instr():
-                for c in instr():
-                    for d in instr():
-                        trans = {
-                            (0, 0): a,
-                            (0, 1): b,
-                            (1, 0): c,
-                            (1, 1): d
-                        }
-                        yield trans
+        for i in itertools.product(instr(), repeat=states*2):
+            trans = {}
+            n=0
+            if len(i)>states:
+                for state in range(states):
+                    for symbol in [0, 1]:
+                        trans[(state, symbol)] = i[n]
+                        n += 1
+            yield trans
 
     champion = BusyBeaver({})
 
+    count = binary_machines(states)
     for num, tran in enumerate(all_transitions(), 1):
         candidate = BusyBeaver(transition=tran)
         try:
             if num % 101 == 0:
-                log("%d / %d\r" % (num, binary_machines(states)))
-            candidate.run(7) # cheating: stop after ops > S(n)
+                log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
+            candidate.run(107+1) # cheating: op>S(3) => op = 1+S(3)
+            # above S from http://www.drb.insel.de/~heiner/BB/
             continue # Did not halt
         except KeyError:
             # By definition, halts
             pass
+        log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
         if candidate.ones() > champion.ones():
             champion = candidate
             show(champion)
 
-    log("\n%d-state machines enumerated: %d\n" % (states, num))
+    log("  %d-state machines enumerated: %d of %d\n" % (states, num, count))
     return champion.ones()
 
 
 if __name__ == "__main__":
-    log("Sigma(2) = %s\n" % str(sigma(2)))
+    for n in range(0,4):
+        log("Sigma(%d) = %s\n" % (n, str(sigma(n))))

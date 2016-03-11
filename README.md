@@ -41,6 +41,20 @@ How to run
 
 Just type `python busybeaver.py`. It supports Python 2 and 3.
 
+*Protip:* Run with pypy.
+
+Todo
+----
+
+  * Run all machines at once, one step at a time (at least in batches).
+  * Multiplex batches onto processes with multiprocessing
+  * Find a cheap way to suspend and resume machines (e.g., make unique
+    numerical ID for each machine, save tape + ID, instead of dicts).
+  * With all above, have a queue, the ones that halt are removed from queue,
+    keep chugging on the ones that don't seem to finish.
+  * Finally, add some heuristics for detecting non-halting machines. Try to
+    cover all cases for Sigma(0..2) at least.
+
 Author and license
 ------------------
 
