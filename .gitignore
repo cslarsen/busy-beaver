@@ -1,2 +1,5 @@
 *.pyc
+GPATH
+GRTAGS
+GTAGS
 __pycache__
