@@ -130,22 +130,36 @@ class BusyBeaver(TuringMachine):
 
 
 def show(machine):
-    log("  %d ones, %d shifts: %s\n" % (machine.ones(), machine.tape.shifts,
-        machine.tape))
+    log("\n")
+    log("  ones:  %d\n" % machine.ones())
+    log("  steps: %d\n" % machine.tape.shifts)
+    log("  tape:  %s\n" % machine.tape)
 
-    for (state, symbol), instr in sorted(machine.transition.items()):
-        state = chr(ord("A") + state)
-        write, move, next = instr
-        move = {-1: "L", 1: "R"}.get(move, move)
-        next = chr(ord("A") + next) if next != "H" else next
-        log("    %s %s: %s%s%s\n" % (state, symbol, write, move, next))
+    format_state = lambda s: chr(ord("A") + s)
+    format_move = lambda n: "L" if n==-1 else "R"
+    format_next = lambda n: format_state(n) if n!="Z" else n
+
+    def fmt(n,w,m):
+        return "%s%s%s" % (format_next(n), w, format_move(m))
+
+    it = iter(sorted(machine.transition.items()))
+    try:
+        while True:
+            (state, symbol), (write, move, next) = it.next()
+            a = fmt(next, write, move)
+            (state2, symbol), (write, move, next) = it.next()
+            assert state==state2, "Not a binary Busy Beaver?"
+            b = fmt(next, write, move)
+            log("  %s: %s %s\n" % (format_state(state), a, b))
+    except StopIteration:
+        pass
 
 def sigma(states):
     def instr():
         """Yields all possible transitions for an n-state machine."""
         for symbol in [0, 1]:
             for move in [-1, 1]:
-                for state in ["H"] + list(range(states)):
+                for state in ["Z"] + list(range(states)):
                     yield (symbol, move, state)
 
     def all_transitions():
@@ -179,10 +193,10 @@ def sigma(states):
             champion = candidate
             show(champion)
 
-    log("  %d-state machines enumerated: %d of %d\n" % (states, num, count))
+    log("%d-state machines enumerated: %d of %d\n" % (states, num, count))
     return champion.ones()
 
 
 if __name__ == "__main__":
-    for n in range(0,4):
+    for n in range(0,5):
         log("Sigma(%d) = %s\n" % (n, str(sigma(n))))
