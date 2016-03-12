@@ -6,10 +6,6 @@ import collections
 import itertools
 import sys
 
-def binary_machines(n):
-    """The number of possible n-state, binary Turing machines."""
-    return (4*(n+1))**(2*n)
-
 def log(string, stream=sys.stdout):
     stream.write(string)
     stream.flush()
@@ -154,33 +150,38 @@ def show(machine):
     except StopIteration:
         pass
 
-def sigma(states):
-    def instr():
-        """Yields all possible transitions for an n-state machine."""
-        for symbol in [0, 1]:
-            for move in [-1, 1]:
-                for state in ["Z"] + list(range(states)):
-                    yield (symbol, move, state)
+def binary_machines(n):
+    """The number of possible n-state, binary Turing machines."""
+    return (4*(n+1))**(2*n)
 
-    def all_transitions():
-        """Generate all possible transition functions."""
-        for i in itertools.product(instr(), repeat=states*2):
-            trans = {}
-            n=0
-            if len(i)>states:
-                for state in range(states):
-                    for symbol in [0, 1]:
-                        trans[(state, symbol)] = i[n]
-                        n += 1
-            yield trans
+def enum_instructions(states):
+    """Yields all possible transitions for an n-state machine."""
+    for symbol in [0, 1]:
+        for move in [-1, 1]:
+            for state in ["Z"] + list(range(states)):
+                yield (symbol, move, state)
 
+def enum_transitions(states):
+    """Generate all possible transition functions."""
+    for i in itertools.product(enum_instructions(states), repeat=states*2):
+        trans = {}
+        n=0
+        if len(i)>states:
+            for state in range(states):
+                for symbol in [0, 1]:
+                    trans[(state, symbol)] = i[n]
+                    n += 1
+        yield trans
+
+def sigma(states, verbose=True):
     champion = BusyBeaver({})
-
+    champion_ones = champion.ones()
     count = binary_machines(states)
-    for num, tran in enumerate(all_transitions(), 1):
+
+    for num, tran in enumerate(enum_transitions(states), 1):
         candidate = BusyBeaver(transition=tran)
         try:
-            if num % 101 == 0:
+            if verbose and (num % 1111) == 0:
                 log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
             candidate.run(107+1) # cheating: op>S(3) => op = 1+S(3)
             # above S from http://www.drb.insel.de/~heiner/BB/
@@ -188,14 +189,18 @@ def sigma(states):
         except KeyError:
             # By definition, halts
             pass
-        log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
-        if candidate.ones() > champion.ones():
+
+        if candidate.ones() > champion_ones:
             champion = candidate
-            show(champion)
+            champion_ones = champion.ones()
+            if verbose:
+                log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
+                show(champion)
 
-    log("%d-state machines enumerated: %d of %d\n" % (states, num, count))
-    return champion.ones()
+    if verbose:
+        log("%d-state machines enumerated: %d of %d\n" % (states, num, count))
 
+    return champion_ones
 
 if __name__ == "__main__":
     for n in range(0,5):
