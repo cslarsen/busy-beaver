@@ -173,6 +173,45 @@ def enum_transitions(states):
                     n += 1
         yield trans
 
+def plot_bbs(states=2, maxsteps=108):
+    import matplotlib.pyplot as plt
+
+    class Data(object):
+        def __init__(self, width):
+            self.data = []
+            self.line = []
+            self.width = width
+
+        def add(self, result):
+            if len(self.line) < self.width:
+                self.line.append(result)
+            else:
+                self.data.append(self.line)
+                self.line = []
+
+        def finish(self):
+            self.data.append(self.line)
+            self.line = []
+
+    data = Data()
+
+    for num, tran in enumerate(enum_transitions(states), 1):
+        candidate = BusyBeaver(transition=tran)
+        log("\r%d / %d" % (num, binary_machines(states)))
+        try:
+            candidate.run(maxsteps)
+            # Did not halt
+            data.add(0)
+        except KeyError:
+            # By definition, halts
+            data.add(candidate.tape.shifts)
+
+    log("\n")
+    data.finish()
+    fig, ax = plt.subplots()
+    im = ax.imshow(data.data, interpolation="none")
+    plt.show()
+
 def sigma(states, verbose=True):
     champion = BusyBeaver({})
     champion_ones = champion.ones()
@@ -203,5 +242,6 @@ def sigma(states, verbose=True):
     return champion_ones
 
 if __name__ == "__main__":
+    #plotsigma()
     for n in range(0,5):
         log("Sigma(%d) = %s\n" % (n, str(sigma(n))))
