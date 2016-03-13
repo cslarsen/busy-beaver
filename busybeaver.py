@@ -138,6 +138,7 @@ class TuringMachine(object):
 class BusyBeaver(TuringMachine):
     def __init__(self, transition):
         super(BusyBeaver, self).__init__(transition=transition)
+        self.halts = None
 
     def ones(self):
         """Returns number of ones in the tape."""
@@ -168,6 +169,28 @@ def show(machine):
             log("  %s: %s %s\n" % (format_state(state), a, b))
     except StopIteration:
         pass
+
+def format_trans(machine):
+    s = ""
+    format_state = lambda s: chr(ord("A") + s)
+    format_move = lambda n: "L" if n==-1 else "R"
+    format_next = lambda n: format_state(n) if n!="Z" else n
+
+    def fmt(n,w,m):
+        return "%s%s%s" % (format_next(n), w, format_move(m))
+
+    it = iter(sorted(machine.transition.items()))
+    try:
+        while True:
+            (state, symbol), (write, move, next) = it.next()
+            a = fmt(next, write, move)
+            (state2, symbol), (write, move, next) = it.next()
+            assert state==state2, "Not a binary Busy Beaver?"
+            b = fmt(next, write, move)
+            s += "  %s: %s %s\n" % (format_state(state), a, b)
+    except StopIteration:
+        pass
+    return s
 
 def binary_machines(n):
     """The number of possible n-state, binary Turing machines."""
@@ -201,12 +224,17 @@ def plot_bbs(states=2, maxsteps=27):
             self.line = []
             self.width = width
 
-        def add(self, result):
-            if len(self.line) < self.width:
-                self.line.append(result)
-            else:
+            self.lineobj = []
+            self.dataobj = []
+
+        def add(self, obj, result):
+            self.line.append(result)
+            self.lineobj.append(obj)
+            if len(self.line) == self.width:
                 self.data.append(self.line)
+                self.dataobj.append(self.lineobj)
                 self.line = []
+                self.lineobj = []
 
     ones = Data((4*(states+1))**states)
     steps = Data((4*(states+1))**states)
@@ -218,19 +246,45 @@ def plot_bbs(states=2, maxsteps=27):
         try:
             candidate.run(1+maxsteps)
             # Did not halt
-            ones.add(0)
-            steps.add(0)
+            ones.add(candidate, 0)
+            steps.add(candidate, 0)
+            candidate.halts = False
         except KeyError:
             # By definition, halts
-            ones.add(candidate.ones())
-            steps.add(candidate.tape.shifts)
+            ones.add(candidate, candidate.ones())
+            steps.add(candidate, candidate.tape.shifts)
+            candidate.halts = True
+
+    class Formatter(object):
+        def __init__(self, im, label):
+            self.im = im
+            self.label = label
+
+        def __call__(self, x, y):
+            z = self.im.get_array()[int(y), int(x)]
+            s = "%s=%d" % (self.label, z)
+
+            machine = ones.dataobj[int(y)][int(x)]
+            t = format_trans(machine)
+            t = t.replace("\n", " ")
+            t = t.replace("  ", " ")
+
+            s += " " + t
+            if machine.halts:
+                s += " " + str(machine.tape).replace(" ", "")
+            return s#"%d %d %s" % (int(x), int(y), s)
 
     log("\rplotting ... %d / %d\n" % (num, binary_machines(states)))
     fig, (ax1, ax2) = plt.subplots(ncols=2)
-    ax1.imshow(ones.data, interpolation="none", origin="upper")
+    im1 = ax1.imshow(ones.data, interpolation="none", origin="upper")
     ax1.set_title("Ones")
-    ax2.imshow(steps.data, interpolation="none", origin="upper")
+    ax1.format_coord = Formatter(im1, "ones")
+
+    im2 = ax2.imshow(steps.data, interpolation="none", origin="upper")
     ax2.set_title("Steps")
+    ax2.format_coord = Formatter(im2, "steps")
+
+    #plt.colorbar()
     plt.show()
 
 def sigma(states, verbose=True):
@@ -245,9 +299,11 @@ def sigma(states, verbose=True):
                 log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
             candidate.run(107+1) # cheating: op>S(3) => op = 1+S(3)
             # above S from http://www.drb.insel.de/~heiner/BB/
+            candidate.halts = False
             continue # Did not halt
         except KeyError:
             # By definition, halts
+            candidate.halts = True
             pass
 
         if candidate.ones() > champion_ones:
