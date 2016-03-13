@@ -51,9 +51,8 @@ blue if the machine did not halt. The order stems from the way I enumerate the
 transition functions, and is a bit arbitrary here (more below).
 
 Even so, we can clearly see clusters of machines with many ones. This shows
-that some *general* configurations lead to clusters well performing Busy
-Beavers, which is kinda self-evident, but surely nice to see visually.  It
-would be very cool to try to order the plottig sequence in some meaningful way.
+that some *general* configurations lead to clusters of well performing Busy
+Beavers, which is what you'd expect, but not necessarily so.
 
 To run the plot, call `plot_bbs` or run `python busybeaver.py -p`. It requires
 `matplotlib`.
