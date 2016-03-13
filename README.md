@@ -51,9 +51,9 @@ blue if the machine did not halt. The order stems from the way I enumerate the
 transition functions, and is a bit arbitrary here (more below).
 
 Even so, we can clearly see clusters of machines with many ones. This shows
-that some configurations lead to well performing Busy Beavers, which is
-self-evident, but nice to see. It would be very cool to try to order the
-plottig sequence in some meaningful way.
+that some *general* configurations lead to clusters well performing Busy
+Beavers, which is kinda self-evident, but surely nice to see visually.  It
+would be very cool to try to order the plottig sequence in some meaningful way.
 
 To run the plot, call `plot_bbs` or run `python busybeaver.py -p`. It requires
 `matplotlib`.
@@ -85,8 +85,7 @@ since all of the 2-state machines will become embedded as sub-machines in the
 3-state machines, if we do the enumeration right, we should see higher number
 of ones earlier in the run there as well.
 
-(Checked it) With this arrangement we *do* get earlier hits for 3-state
-macines.
+Update: I tested it, and *do* get earlier hits for 3-state macines.
 
 A final thing, if you take a Turing Machine and reverse all directions, it
 should be the exact same machine. Therefore, a true plot should show some kind
