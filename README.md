@@ -93,6 +93,9 @@ of symmetry. I haven't figured out how to do that on a two-dimensional plot
 yet. But there should be no doubt that if you do this hyperdimensionally and in
 a smart way, you should be able to perform some clustering.
 
+A 3-state Busy Beaver plot would be a 4k by 4k image, and we know that
+S(3)=107, so it's absolutely doable. I'll post one later.
+
 Remember, the reason we can easily plot stuff like this is because we cheat by
 knowing the values of S(2) and S(3). It's still a non-computable function, but
 by taking into account clustering, we can probably be able to find classes of
