@@ -43,18 +43,37 @@ Just type `python busybeaver.py`. It supports Python 2 and 3. Protip: Use pypy.
 
 Plots
 -----
-
 ![Plot of 2-state Busy Beavers](bb.png "2-state Busy Beavers")
 
 Above I plot the number of ones and steps for all 2-state, binary Turing
 Machines starting with a blank tape. Each pixel is a machine, and its color is
 blue if the machine did not halt. The order stems from the way I enumerate the
-transition functions, and is a bit arbitrary here. Even so, we can clearly see
-clusters of machines with many ones. This shows that some configurations lead
-to well performing Busy Beavers, which is self-evident, but nice to see. It
-would be very cool to try to order the plottig sequence in some meaningful way.
+transition functions, and is a bit arbitrary here (more below).
 
-To run the plot, run the `plot_bbs` function. It requires `matplotlib`.
+Even so, we can clearly see clusters of machines with many ones. This shows
+that some configurations lead to well performing Busy Beavers, which is
+self-evident, but nice to see. It would be very cool to try to order the
+plottig sequence in some meaningful way.
+
+To run the plot, call `plot_bbs` or run `python busybeaver.py -p`. It requires
+`matplotlib`.
+
+About the ordering, it's defined by the function `enum_instructions`. For the
+above plot, it enumerates:
+
+    for symbol in [0, 1]:
+        for move in [-1, 1]:
+            for state in ["Z"] + list(range(states)):
+                yield (symbol, move, state)
+
+However, it would be nice to get larger clusters of hits. Here's one where I
+have the state at the top (for state, for move, for symbol ...):
+
+![Plot of 2-state Busy Beavers](bb-state-move-symb.png "2-state Busy Beavers")
+
+Finally, we have state-symbol-move:
+
+![Plot of 2-state Busy Beavers](bb-state-symb-move.png "2-state Busy Beavers")
 
 Todo
 ----
