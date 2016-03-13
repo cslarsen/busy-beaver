@@ -1,5 +1,7 @@
-import unittest
 import busybeaver as bb
+import pickle
+import unittest
+
 
 class Tape(unittest.TestCase):
     def test_initial_conditions(self):
@@ -10,14 +12,14 @@ class Tape(unittest.TestCase):
         self.assertEqual(t.shifts, 0)
         self.assertEqual(t.read(), 0)
 
-        t = bb.Tape(position=10, default=3)
+        t = bb.Tape(position=10, default_factory=lambda: 3)
         self.assertEqual(t.position, 10)
         self.assertEqual(t.leftmost, 0)
         self.assertEqual(t.rightmost, 10)
         self.assertEqual(t.shifts, 0)
         self.assertEqual(t.read(), 3)
 
-        t = bb.Tape(position=-10, default=-4)
+        t = bb.Tape(position=-10, default_factory=lambda: -4)
         self.assertEqual(t.position, -10)
         self.assertEqual(t.leftmost, -10)
         self.assertEqual(t.rightmost, 0)
@@ -25,7 +27,7 @@ class Tape(unittest.TestCase):
         self.assertEqual(t.read(), -4)
 
     def test_read_write(self):
-        t = bb.Tape(default="default")
+        t = bb.Tape(default_factory=lambda: "default")
         t.write("one")
         self.assertEqual(t.read(), "one")
         t.left()
@@ -82,7 +84,10 @@ class TuringMachine(unittest.TestCase):
     pass
 
 class BusyBeaver(unittest.TestCase):
-    pass
+    def test_pickle(self):
+        b = bb.BusyBeaver({})
+        p = pickle.dumps(b)
+        self.assertEqual(b, pickle.loads(p))
 
 
 if __name__ == "__main__":

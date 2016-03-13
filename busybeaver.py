@@ -10,13 +10,24 @@ def log(string, stream=sys.stdout):
     stream.write(string)
     stream.flush()
 
+def zero():
+    # Used for pickling
+    return 0
+
 class Tape(object):
-    def __init__(self, position=0, default=0):
-        self.data = collections.defaultdict(lambda: default)
+    def __init__(self, position=0, default_factory=zero):
+        self.data = collections.defaultdict(default_factory)
         self._position = position
         self.leftmost = min(0, position)
         self.rightmost = max(0, position)
         self.shifts = 0
+
+    def __eq__(self, other):
+        return (self._position == other._position
+                and self.leftmost == other.leftmost
+                and self.rightmost == other.rightmost
+                and self.shifts == other.shifts
+                and self.data.items() == other.data.items())
 
     @property
     def position(self):
@@ -81,14 +92,17 @@ class TuringMachine(object):
         self.tape = Tape()
         self.transition = transition
 
+    def __eq__(self, other):
+        return (self.state == other.state
+                and self.tape == other.tape
+                and self.transition == other.transition)
+
     def __repr__(self):
-        return "Machine(state=%s, position=%s, tape=%s, transition=%s, shifts=%s)" % (
-                self.state, self.position, self.tape, self.transition,
-                self.shifts)
+        return "<TuringMachine: state=%s tape=%s>" % (
+                self.state, repr(self.tape))
 
     def __str__(self):
-        return "Machine(state=%s, position=%s, symbol=%s, shifts=%s)" % (self.state,
-                self.position, self.tape[self.position], self.shifts)
+        return "%s %s" % (self.state, str(self.tape))
 
     def step(self):
         """Perform one computation step."""
