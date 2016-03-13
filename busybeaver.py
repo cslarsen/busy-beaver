@@ -2,9 +2,13 @@
 Calculates the Busy Beaver Sigma function, naively.
 """
 
+import bz2
 import collections
 import itertools
+import os
+import pickle
 import sys
+
 
 def log(string, stream=sys.stdout):
     stream.write(string)
@@ -144,6 +148,14 @@ class BusyBeaver(TuringMachine):
         """Returns number of ones in the tape."""
         return sum(self.tape.values())
 
+    def __eq__(self, other):
+        return (super(BusyBeaver, self).__eq__(other)
+                and self.halts == other.halts)
+
+    def coded_ones(self):
+        """Tape values as a number."""
+        return int("".join(map(str, self.tape.values())), 2)
+
 
 def show(machine):
     log("\n")
@@ -215,7 +227,7 @@ def enum_transitions(states):
                     n += 1
         yield trans
 
-def plot_bbs(states=2, maxsteps=27):
+def plot_bbs(states, maxsteps):
     import matplotlib.pyplot as plt
 
     class Data(object):
@@ -224,36 +236,25 @@ def plot_bbs(states=2, maxsteps=27):
             self.line = []
             self.width = width
 
-            self.lineobj = []
-            self.dataobj = []
-
-        def add(self, obj, result):
+        def add(self, result):
             self.line.append(result)
-            self.lineobj.append(obj)
             if len(self.line) == self.width:
                 self.data.append(self.line)
-                self.dataobj.append(self.lineobj)
                 self.line = []
-                self.lineobj = []
 
     ones = Data((4*(states+1))**states)
     steps = Data((4*(states+1))**states)
 
-    for num, tran in enumerate(enum_transitions(states), 1):
-        candidate = BusyBeaver(transition=tran)
-        if (num % 101) == 0:
-            log("\rplotting ... %d / %d" % (num, binary_machines(states)))
-        try:
-            candidate.run(1+maxsteps)
-            # Did not halt
-            ones.add(candidate, 0)
-            steps.add(candidate, 0)
-            candidate.halts = False
-        except KeyError:
-            # By definition, halts
-            ones.add(candidate, candidate.ones())
-            steps.add(candidate, candidate.tape.shifts)
-            candidate.halts = True
+    generator = Generator(states, maxsteps, "%d-state.pickled.bz2" % states)
+    generator.run()
+    log("Plotting ...")
+    for (halts, shifts, tape) in generator.results:
+        if halts:
+            ones.add(generator.popcount(tape))
+            steps.add(shifts)
+        else:
+            ones.add(0)
+            steps.add(0)
 
     class Formatter(object):
         def __init__(self, im, label):
@@ -261,30 +262,29 @@ def plot_bbs(states=2, maxsteps=27):
             self.label = label
 
         def __call__(self, x, y):
-            z = self.im.get_array()[int(y), int(x)]
-            s = "%s=%d" % (self.label, z)
+            x = int(x)
+            y = int(y)
+            z = self.im.get_array()[y, x]
+            s = "(%d,%d) %s=%d" % (x, y, self.label, z)
+            return s
 
-            machine = ones.dataobj[int(y)][int(x)]
-            t = format_trans(machine)
-            t = t.replace("\n", " ")
-            t = t.replace("  ", " ")
+    doubleplot = False
 
-            s += " " + t
-            if machine.halts:
-                s += " " + str(machine.tape).replace(" ", "")
-            return s#"%d %d %s" % (int(x), int(y), s)
-
-    log("\rplotting ... %d / %d\n" % (num, binary_machines(states)))
-    fig, (ax1, ax2) = plt.subplots(ncols=2)
-    im1 = ax1.imshow(ones.data, interpolation="none", origin="upper")
-    ax1.set_title("Ones")
-    ax1.format_coord = Formatter(im1, "ones")
-
-    im2 = ax2.imshow(steps.data, interpolation="none", origin="upper")
-    ax2.set_title("Steps")
-    ax2.format_coord = Formatter(im2, "steps")
-
-    #plt.colorbar()
+    # Side-by-side plots
+    if doubleplot:
+        fig, (ax1, ax2) = plt.subplots(ncols=2)
+        im1 = ax1.imshow(ones.data, interpolation="none", origin="upper")
+        ax1.set_title("Ones")
+        ax1.format_coord = Formatter(im1, "ones")
+        im2 = ax2.imshow(steps.data, interpolation="none", origin="upper")
+        ax2.set_title("Steps")
+        ax2.format_coord = Formatter(im2, "steps")
+    else:
+        # Single plot
+        fig, ax1 = plt.subplots()
+        im1 = ax1.imshow(ones.data, interpolation="none", origin="upper")
+        ax1.set_title("Ones")
+        ax1.format_coord = Formatter(im1, "ones")
     plt.show()
 
 def sigma(states, verbose=True):
@@ -318,9 +318,120 @@ def sigma(states, verbose=True):
 
     return champion_ones
 
-if __name__ == "__main__":
+class Generator(object):
+    """Generates Busy Beavers with a file backing store, so that it can be
+    resumed."""
+    def __init__(self, states, maxsteps, filename):
+        if os.path.exists(filename):
+            log("Loading %s ... " % filename)
+            g = Generator.load(filename)
+            log("OK\n")
+            self.states = g.states
+            self.maxsteps = g.maxsteps
+            self.filename = g.filename
+            self.generator = g.generator
+            self.results = g.results
+        else:
+            self.states = states
+            self.maxsteps = maxsteps
+            self.filename = filename
+            self.generator = enum_transitions
+            self.results = []
+
+    @property
+    def count(self):
+        return len(self.results)
+
+    @staticmethod
+    def load(filename):
+        with open(filename, "rb") as f:
+            log("\n")
+            data = f.read()
+            log("\nDecompressing ...")
+            data = bz2.decompress(data)
+            log("\nUnpickling ...")
+            data = pickle.loads(data)
+            log("\nDone\n")
+            return data
+
+    def _save(self):
+        tmp = "%s.tmp.%d" % (self.filename, os.getpid())
+        with open(tmp, "wb") as f:
+            log("Pickling ...")
+            data = pickle.dumps(self)
+            log("\nCompressing ...")
+            data = bz2.compress(data)
+            log("\nWriting ...")
+            f.write(data)
+            log("\nDone\n")
+        os.rename(tmp, self.filename)
+
+    def popcount(self, n):
+        return bin(n).count("1")
+
+    def champion(self):
+        best = 0
+        for (halts, shifts, tape) in self.results:
+            best = max(best, self.popcount(tape))
+        return best
+
+    def run(self, save_every=3000000):
+        printed = False
+        made = 0
+        total = binary_machines(self.states)
+
+        for no, transition in enumerate(self.generator(self.states), 1):
+            if no < self.count:
+                continue
+
+            if (no % 101) == 0:
+                log("s=%d %d / %d          \r" % (self.states, no, total))
+                printed = True
+
+            try:
+                candidate = BusyBeaver(transition=transition)
+                candidate.run(1+self.maxsteps)
+                candidate.halts = False
+            except KeyError:
+                candidate.halts = True
+
+            self.results.append((candidate.halts, candidate.tape.shifts,
+                candidate.coded_ones()))
+            made += 1
+
+            if (made % save_every) == 0:
+                log("s=%d Saving %d / %d (%d) ...         \r" % (self.states,
+                    self.count, total, made))
+                self._save()
+
+        if printed:
+            log("\n")
+
+        if made > 0:
+            log("s=%d Saving %d ...              \r" % (self.states, self.count))
+            self._save()
+            log("\n")
+
+def generate():
+    try:
+        for states in range(0, 5):
+            generator = Generator(states, 107, "%d-state.pickled.bz2" % states)
+            generator.run()
+            log("Sigma(%d) = %d\n" % (generator.states, generator.champion()))
+    except KeyboardInterrupt:
+        pass
+
+def main():
     if "-p" in sys.argv[1:]:
-        plot_bbs()
+        # Plot
+        plot_bbs(3, 107)
+    elif "-g" in sys.argv[1:]:
+        # Calc and pickle files
+        generate()
     else:
+        # Calc and show sigma... should use pickled files above
         for n in range(0,5):
             log("Sigma(%d) = %s\n" % (n, str(sigma(n))))
+
+if __name__ == "__main__":
+    main()

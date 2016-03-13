@@ -1,4 +1,6 @@
+*.bz2
 *.pyc
+*.tmp.*
 GPATH
 GRTAGS
 GTAGS

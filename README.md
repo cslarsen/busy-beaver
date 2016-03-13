@@ -93,7 +93,10 @@ yet. But there should be no doubt that if you do this hyperdimensionally and in
 a smart way, you should be able to perform some clustering.
 
 A 3-state Busy Beaver plot would be a 4k by 4k image, and we know that
-S(3)=107, so it's absolutely doable. I'll post one later.
+S(3)=107, so it's absolutely doable. Here's one rudimentary without any regard
+to clustering:
+
+![Plot of 3-state Busy Beavers](bb-3state.png "3-state Busy Beavers")
 
 Remember, the reason we can easily plot stuff like this is because we cheat by
 knowing the values of S(2) and S(3). It's still a non-computable function, but
