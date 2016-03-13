@@ -71,9 +71,33 @@ have the state at the top (for state, for move, for symbol ...):
 
 ![Plot of 2-state Busy Beavers](bb-state-move-symb.png "2-state Busy Beavers")
 
-Finally, we have state-symbol-move:
+Then we have state-symbol-move:
 
 ![Plot of 2-state Busy Beavers](bb-state-symb-move.png "2-state Busy Beavers")
+
+But looking at the plots, we'd like to encounter the true Busy Beavers first,
+so let's reverse the enumeration of the states:
+
+![Plot of 2-state Busy Beavers](bb-rstate-symb-move.png "2-state Busy Beavers")
+
+I don't know if this clustering translates to larger number of states, but
+since all of the 2-state machines will become embedded as sub-machines in the
+3-state machines, if we do the enumeration right, we should see higher number
+of ones earlier in the run there as well.
+
+(Checked it) With this arrangement we *do* get earlier hits for 3-state
+macines.
+
+A final thing, if you take a Turing Machine and reverse all directions, it
+should be the exact same machine. Therefore, a true plot should show some kind
+of symmetry. I haven't figured out how to do that on a two-dimensional plot
+yet. But there should be no doubt that if you do this hyperdimensionally and in
+a smart way, you should be able to perform some clustering.
+
+Remember, the reason we can easily plot stuff like this is because we cheat by
+knowing the values of S(2) and S(3). It's still a non-computable function, but
+by taking into account clustering, we can probably be able to find classes of
+machines that never terminate.
 
 Todo
 ----

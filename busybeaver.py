@@ -198,9 +198,9 @@ def binary_machines(n):
 
 def enum_instructions(states):
     """Yields all possible transitions for an n-state machine."""
-    for symbol in [0, 1]:
-        for move in [-1, 1]:
-            for state in ["Z"] + list(range(states)):
+    for state in reversed(["Z"] + list(range(states))):
+        for symbol in [0, 1]:
+            for move in [-1, 1]:
                 yield (symbol, move, state)
 
 def enum_transitions(states):
