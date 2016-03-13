@@ -14,8 +14,8 @@ class Tape(object):
     def __init__(self, position=0, default=0):
         self.data = collections.defaultdict(lambda: default)
         self._position = position
-        self.leftmost = 0
-        self.rightmost = 0
+        self.leftmost = min(0, position)
+        self.rightmost = max(0, position)
         self.shifts = 0
 
     @property
@@ -24,42 +24,47 @@ class Tape(object):
 
     @position.setter
     def position(self, value):
-        self.shifts += abs(value)
+        self.shifts += abs(self._position - value)
         self._position = value
+        self._update_extremes()
 
     def _update_extremes(self):
         self.leftmost = min(self.leftmost, self.position)
         self.rightmost = max(self.rightmost, self.position)
 
     def read(self):
-        self._update_extremes()
         return self.data[self.position]
 
     def write(self, value):
-        self._update_extremes()
         self.data[self.position] = value
 
     def left(self):
-        self.shifts += 1
         self.position -= 1
 
     def right(self):
-        self.shifts += 1
         self.position += 1
 
     def values(self):
-        return self.data.values()
+        for key in sorted(self.data.keys()):
+            yield self.data[key]
 
     def __str__(self):
+        separator = " "
         s = ""
         for index in range(self.leftmost, self.rightmost+1):
-            s += "%s " % self.data[index]
+            s += "%s%s" % (self.data[index], separator)
         return s[:-1]
 
     def __repr__(self):
-        return "<Tape: position=%d, default=%s, leftmost=%d, rightmost=%d, shifts=%d data=%s>" % (
-            self.position, self.data.default_factory(), self.leftmost,
-            self.rightmost, self.shifts, dict(self.data))
+        items = 3
+        extract = [v for n,v in enumerate(self.values()) if n<items]
+        extra = ""
+        if len(self.data) > items:
+            extra = "... %d more" % len(self.data)-items
+        return "<Tape: position=%d%s%s%s%s>" % (self.position,
+                " values=[" if len(extract)>0 else "",
+                ", ".join(map(repr, extract)), extra,
+                "]" if len(extract)>0 else "")
 
 
 class TuringMachine(object):
