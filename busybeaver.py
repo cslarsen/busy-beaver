@@ -323,9 +323,8 @@ class Generator(object):
     resumed."""
     def __init__(self, states, maxsteps, filename):
         if os.path.exists(filename):
-            log("Loading %s ... " % filename)
+            log("Loading %s ...\n" % filename)
             g = Generator.load(filename)
-            log("OK\n")
             self.states = g.states
             self.maxsteps = g.maxsteps
             self.filename = g.filename
@@ -358,9 +357,9 @@ class Generator(object):
         tmp = "%s.tmp.%d" % (self.filename, os.getpid())
         with open(tmp, "wb") as f:
             log("Pickling ...")
-            data = pickle.dumps(self)
+            data = pickle.dumps(self, protocol=2)
             log("\nCompressing ...")
-            data = bz2.compress(data)
+            data = bz2.compress(data, compresslevel=1)
             log("\nWriting ...")
             f.write(data)
             log("\nDone\n")
@@ -372,10 +371,12 @@ class Generator(object):
     def champion(self):
         best = 0
         for (halts, shifts, tape) in self.results:
-            best = max(best, self.popcount(tape))
+            if halts:
+                best = max(best, self.popcount(tape))
         return best
 
     def run(self, save_every=3000000):
+        best = self.champion()
         printed = False
         made = 0
         total = binary_machines(self.states)
@@ -394,13 +395,16 @@ class Generator(object):
                 candidate.halts = False
             except KeyError:
                 candidate.halts = True
+                if candidate.ones() > best:
+                    best = candidate.ones()
+                    log("states=%d Champion %d                    \n" % (self.states, best))
 
             self.results.append((candidate.halts, candidate.tape.shifts,
                 candidate.coded_ones()))
             made += 1
 
             if (made % save_every) == 0:
-                log("s=%d Saving %d / %d (%d) ...         \r" % (self.states,
+                log("\ns=%d Saving %d / %d (%d) ...\n" % (self.states,
                     self.count, total, made))
                 self._save()
 
@@ -408,7 +412,7 @@ class Generator(object):
             log("\n")
 
         if made > 0:
-            log("s=%d Saving %d ...              \r" % (self.states, self.count))
+            log("\ns=%d Saving %d ..." % (self.states, self.count))
             self._save()
             log("\n")
 
