@@ -192,7 +192,7 @@ def enum_transitions(states):
                     n += 1
         yield trans
 
-def plot_bbs(states=2, maxsteps=108):
+def plot_bbs(states=2, maxsteps=27):
     import matplotlib.pyplot as plt
 
     class Data(object):
@@ -208,27 +208,29 @@ def plot_bbs(states=2, maxsteps=108):
                 self.data.append(self.line)
                 self.line = []
 
-        def finish(self):
-            self.data.append(self.line)
-            self.line = []
-
-    data = Data()
+    ones = Data((4*(states+1))**states)
+    steps = Data((4*(states+1))**states)
 
     for num, tran in enumerate(enum_transitions(states), 1):
         candidate = BusyBeaver(transition=tran)
-        log("\r%d / %d" % (num, binary_machines(states)))
+        if (num % 101) == 0:
+            log("\rplotting ... %d / %d" % (num, binary_machines(states)))
         try:
-            candidate.run(maxsteps)
+            candidate.run(1+maxsteps)
             # Did not halt
-            data.add(0)
+            ones.add(0)
+            steps.add(0)
         except KeyError:
             # By definition, halts
-            data.add(candidate.tape.shifts)
+            ones.add(candidate.ones())
+            steps.add(candidate.tape.shifts)
 
-    log("\n")
-    data.finish()
-    fig, ax = plt.subplots()
-    im = ax.imshow(data.data, interpolation="none")
+    log("\rplotting ... %d / %d\n" % (num, binary_machines(states)))
+    fig, (ax1, ax2) = plt.subplots(ncols=2)
+    ax1.imshow(ones.data, interpolation="none", origin="upper")
+    ax1.set_title("Ones")
+    ax2.imshow(steps.data, interpolation="none", origin="upper")
+    ax2.set_title("Steps")
     plt.show()
 
 def sigma(states, verbose=True):
@@ -261,6 +263,8 @@ def sigma(states, verbose=True):
     return champion_ones
 
 if __name__ == "__main__":
-    #plotsigma()
-    for n in range(0,5):
-        log("Sigma(%d) = %s\n" % (n, str(sigma(n))))
+    if "-p" in sys.argv[1:]:
+        plot_bbs()
+    else:
+        for n in range(0,5):
+            log("Sigma(%d) = %s\n" % (n, str(sigma(n))))

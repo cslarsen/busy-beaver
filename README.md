@@ -39,9 +39,22 @@ stop programs after running more than S(2) operations.
 How to run
 ----------
 
-Just type `python busybeaver.py`. It supports Python 2 and 3.
+Just type `python busybeaver.py`. It supports Python 2 and 3. Protip: Use pypy.
 
-*Protip:* Run with pypy.
+Plots
+-----
+
+![Plot of 2-state Busy Beavers](bb.png "2-state Busy Beavers")
+
+Above I plot the number of ones and steps for all 2-state, binary Turing
+Machines starting with a blank tape. Each pixel is a machine, and its color is
+blue if the machine did not halt. The order stems from the way I enumerate the
+transition functions, and is a bit arbitrary here. Even so, we can clearly see
+clusters of machines with many ones. This shows that some configurations lead
+to well performing Busy Beavers, which is self-evident, but nice to see. It
+would be very cool to try to order the plottig sequence in some meaningful way.
+
+To run the plot, run the `plot_bbs` function. It requires `matplotlib`.
 
 Todo
 ----
