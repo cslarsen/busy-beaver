@@ -121,6 +121,9 @@ Pointers
   * Visualization of Turing Machines, including Busy Beavers
     http://www.mathrix.org/liquid/archives/visualizing-the-computational-universe-or-turings-deep-field
 
+  * The above on arxiv.org
+    http://arxiv.org/pdf/1201.0825v1.pdf
+
 Author and license
 ------------------
 
