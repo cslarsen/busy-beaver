@@ -115,6 +115,12 @@ Todo
   * Finally, add some heuristics for detecting non-halting machines. Try to
     cover all cases for Sigma(0..2) at least.
 
+Pointers
+--------
+
+  * Visualization of Turing Machines, including Busy Beavers
+    http://www.mathrix.org/liquid/archives/visualizing-the-computational-universe-or-turings-deep-field
+
 Author and license
 ------------------
 
