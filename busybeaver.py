@@ -163,6 +163,14 @@ class BusyBeaver(TuringMachine):
         """Tape values as a number."""
         return int("".join(map(str, self.tape.values())), 2)
 
+    @property
+    def has_z_transition(self):
+        """Checks if there are any transitions to Z, the halting state."""
+        for sym, mov, state in self.transition.values():
+            if state == "Z":
+                return True
+        return False
+
 
 def show(machine):
     log("\n")
@@ -304,7 +312,10 @@ def sigma(states, verbose=True):
         try:
             if verbose and (num % 1111) == 0:
                 log("%.2f%% %d / %d\r" % (100.0*num/count, num, count))
-            candidate.run(107+1) # cheating: op>S(3) => op = 1+S(3)
+            # No need to run machine if it doesn't have any halt instruction
+            # (transition to Z)
+            if candidate.has_z_transition:
+                candidate.run(107+1) # cheating: op>S(3) => op = 1+S(3)
             # above S from http://www.drb.insel.de/~heiner/BB/
             candidate.halts = False
             continue # Did not halt
@@ -455,6 +466,9 @@ def list_machines(states):
         machine = BusyBeaver(transition=tran)
         print("n=%d #%d\n%s" % (states, no, format_trans(machine).rstrip()))
         try:
+            if not machine.has_z_transition:
+                print("  No halting transition, skipping")
+                continue
             machine.run(107+1) # cheating: op>S(3) => op = 1+S(3)
             print("  Did not halt")
         except KeyError:
