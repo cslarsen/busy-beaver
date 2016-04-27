@@ -70,6 +70,13 @@ class Tape(object):
             s += "%s%s" % (self.data[index], separator)
         return s[:-1]
 
+    def snip(self, left, right):
+        separator = " "
+        s = ""
+        for index in range(left, right+1):
+            s += "%s%s" % (self.data[index], separator)
+        return s[:-1]
+
     def __repr__(self):
         items = 3
         extract = [v for n,v in enumerate(self.values()) if n<items]
@@ -426,16 +433,43 @@ def generate():
         pass
 
 def main():
-    if "-p" in sys.argv[1:]:
+    args = sys.argv[1:]
+    if "-p" in args:
         # Plot
-        plot_bbs(3, 107)
-    elif "-g" in sys.argv[1:]:
+        plot_bbs(2, 107)
+    elif "-g" in args:
         # Calc and pickle files
         generate()
+    elif "-l" in args:
+        n = 0
+        while True:
+            list_machines(n)
+            n += 1
     else:
         # Calc and show sigma... should use pickled files above
         for n in range(0,5):
             log("Sigma(%d) = %s\n" % (n, str(sigma(n))))
+
+def list_machines(states):
+    for no, tran in enumerate(enum_transitions(states), 0):
+        machine = BusyBeaver(transition=tran)
+        print("n=%d #%d\n%s" % (states, no, format_trans(machine).rstrip()))
+        try:
+            machine.run(107+1) # cheating: op>S(3) => op = 1+S(3)
+            print("  Did not halt")
+        except KeyError:
+            print("  Halted: %d ones" % machine.ones())
+            print("  Tape: %s" % machine.tape)
+            print("  Progression: (%d steps)" % machine.tape.shifts)
+            # Show progression
+            m = BusyBeaver(transition=tran)
+            left = machine.tape.leftmost
+            right = machine.tape.rightmost
+            for i in range(machine.tape.shifts):
+                tape = m.tape.snip(left, right)
+                print("  %s state=%s pos=%d sym=%s" % (tape, m.state,
+                    m.tape.position, m.tape.read()))
+                m.step()
 
 if __name__ == "__main__":
     main()
