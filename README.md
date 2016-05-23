@@ -3,9 +3,9 @@ Busy Beaver
 
 Approximates the [Busy Beaver Σ-function][busybeaver], naïvely.
 
-Σ(n) is the largest number of 1s a non-halting, n-state Turing machine will
-print on its tape. They don't have to be consecutive, but the machine *must*
-halt.
+Σ(n) is the largest number of 1s a non-halting, n-state (and, originally,
+2-symbol) Turing machine will print on its tape. They don't have to be
+consecutive, but the machine *must* halt.
 
 More interestingly, the Σ-function is non-computable. Let me explain.
 
@@ -32,9 +32,8 @@ machines that I myself can't figure out will ever halt or not.
 Status
 ------
 
-The program currently only handles 2-state, 2-symbol Turing machines: So it can
-only find Σ(2). Furthermore, I side-step the halting problem by cheating: I
-stop programs after running more than S(2) operations.
+I'm not proving the haltedness for any machines; I'm cheating by having a table
+of known S(n) values.
 
 How to run
 ----------
