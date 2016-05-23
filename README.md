@@ -84,6 +84,12 @@ of ones earlier in the run there as well.
 
 Update: I tested it, and *do* get earlier hits for 3-state macines.
 
+Update 2: One reason we get some clusters is that many machines will not
+include any instructions that transition to the halt state (`Z` or `H`). For
+those, we know that they definitely will never halt. The ones that *do* have
+such instructions *may* halt, but we don't know. Those are the interesting
+ones.
+
 A final thing, if you take a Turing Machine and reverse all directions, it
 should be the exact same machine. Therefore, a true plot should show some kind
 of symmetry. I haven't figured out how to do that on a two-dimensional plot
