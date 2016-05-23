@@ -29,6 +29,8 @@ disproven. Statements that are true, but cannot be proven so.
 That's why I made this program: I want to find some cool, but simple Turing
 machines that I myself can't figure out will ever halt or not.
 
+The code was featured in a [talk I held on Busy Beavers][talk].
+
 Status
 ------
 
@@ -130,3 +132,4 @@ Copyright (C) 2016 Christian Stigen Larsen
 Distributed under the GPL v3 or later.
 
 [busybeaver]: https://en.wikipedia.org/wiki/Busy_beaver
+[talk]: https://speakerdeck.com/csl/the-busy-beaver-game
