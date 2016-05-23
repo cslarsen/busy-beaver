@@ -22,12 +22,9 @@ loop. That is completely fine, and absolutely workable. But, you will *never*
 cover all cases. So at that point, you have to bring in human operators to
 investigate whether a given machine halts or not. That's also fine, but is
 really just another version of the same problem. Are there machines that humans
-won't be able to prove halts or not? Absolutely. I haven't seen one yet, but we
-know from mathematics that there are statements that cannot be proven or
-disproven. Statements that are true, but cannot be proven so.
-
-That's why I made this program: I want to find some cool, but simple Turing
-machines that I myself can't figure out will ever halt or not.
+won't be able to prove halts or not? Absolutely. The current BB(6) champion
+runs for an insane number of steps, and its source code looks deceptively
+simple.
 
 The code was featured in a [talk I held on Busy Beavers][talk].
 
